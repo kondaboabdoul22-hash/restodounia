@@ -5,21 +5,18 @@ const GENIUSPAY_API = 'https://pay.genius.ci/api/v1/merchant/payments';
 export async function POST(req: Request) {
   try {
     const { amount, customerName, customerPhone, orderId } = await req.json();
-    const secretKey = process.env.GENIUSPAY_SECRET_KEY;
     const publicKey = process.env.NEXT_PUBLIC_GENIUSPAY_PUBLIC_KEY;
 
-    if (!secretKey && !publicKey) {
+    if (!publicKey) {
       return NextResponse.json({ error: 'Genius Pay non configuré' }, { status: 500 });
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4028';
-    const isSandbox = publicKey?.startsWith('pk_sandbox_');
-    const apiKey = isSandbox ? publicKey : secretKey;
 
     const response = await fetch(GENIUSPAY_API, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${publicKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
