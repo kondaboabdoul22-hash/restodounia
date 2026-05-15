@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json({ error: 'Méthode non autorisée' }, { status: 405 });
+  return NextResponse.json({ received: true, message: 'Webhook endpoint OK' });
 }
 
 export const runtime = 'nodejs';
