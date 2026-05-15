@@ -260,7 +260,6 @@ export default function AdminOrders() {
           );
         })}
       </div>
-    </div>
 
       {/* Cancel modal */}
       {cancelTarget && (
