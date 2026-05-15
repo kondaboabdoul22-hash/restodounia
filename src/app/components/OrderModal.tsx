@@ -3,40 +3,81 @@
 import React, { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useCart } from './CartProvider';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 interface OrderModalProps {
   onClose: () => void;
   grandTotal: number;
 }
 
-const paymentMethods = [
-  { id: 'orange', label: 'Orange Money', color: '#FF6600', icon: '🟠' },
-  { id: 'moov', label: 'Moov Money', color: '#00A651', icon: '🟢' },
-  { id: 'wave', label: 'Wave', color: '#1DC2FF', icon: '🔵' },
-  { id: 'cash', label: 'Paiement à la livraison', color: '#9A8F87', icon: '💵' },
-];
-
 export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
   const { items, clearCart } = useCart();
-  const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
-  const [form, setForm] = useState({ name: '', phone: '', address: '', delivery: 'livraison\' as \'livraison\' | \'emporter' });
-  const [payment, setPayment] = useState('orange');
+  const { settings } = useSiteSettings();
+  const [step, setStep] = useState<'form' | 'payment' | 'geniuspay' | 'success'>('form');
+  const [form, setForm] = useState({ name: '', phone: '', address: '', delivery: 'livraison' as 'livraison' | 'emporter' });
+  const [payment, setPayment] = useState('geniuspay');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const paymentMethods = [
+    ...(settings.paymentGeniusPay ? [{ id: 'geniuspay', label: 'Genius Pay (Carte, Orange, Moov, Wave)', color: '#6C5CE7', icon: '💳' }] : []),
+    ...(settings.paymentOrange ? [{ id: 'orange', label: 'Orange Money', color: '#FF6600', icon: '🟠' }] : []),
+    ...(settings.paymentMoov ? [{ id: 'moov', label: 'Moov Money', color: '#00A651', icon: '🟢' }] : []),
+    ...(settings.paymentWave ? [{ id: 'wave', label: 'Wave', color: '#1DC2FF', icon: '🔵' }] : []),
+    ...(settings.paymentCash ? [{ id: 'cash', label: 'Paiement à la livraison', color: '#9A8F87', icon: '💵' }] : []),
+  ];
 
   const handleSubmit = () => {
     if (!form.name || !form.phone) return;
-    setStep('payment');
+    if (payment === 'geniuspay') {
+      handleGeniusPay();
+    } else {
+      setStep('payment');
+    }
+  };
+
+  const handleGeniusPay = async () => {
+    setLoading(true);
+    setError('');
+    const orderId = `RD-${Date.now().toString().slice(-6)}`;
+
+    try {
+      const res = await fetch('/api/geniuspay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: grandTotal,
+          customerName: form.name,
+          customerPhone: form.phone,
+          orderId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.paymentUrl) {
+        clearCart();
+        window.location.href = data.paymentUrl;
+      } else {
+        setError(data.error || 'Erreur de paiement Genius Pay');
+        setLoading(false);
+      }
+    } catch {
+      setError('Impossible de contacter Genius Pay');
+      setLoading(false);
+    }
   };
 
   const handleConfirm = () => {
     setLoading(true);
-    // Mock order submission
     setTimeout(() => {
       setLoading(false);
       setStep('success');
       clearCart();
     }, 1800);
   };
+
+  const waNumber = settings.whatsappNumber.replace(/\s+/g, '').replace('+', '');
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4">
@@ -47,6 +88,7 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
           <h2 className="font-black text-foreground text-xl">
             {step === 'form' && 'Votre Commande'}
             {step === 'payment' && 'Paiement'}
+            {step === 'geniuspay' && 'Paiement Genius Pay'}
             {step === 'success' && 'Commande Confirmée !'}
           </h2>
           <button onClick={onClose} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors">
@@ -87,6 +129,28 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                 ))}
               </div>
 
+              {/* Payment selection first */}
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mode de paiement</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {paymentMethods.map(pm => (
+                  <button
+                    key={pm.id}
+                    onClick={() => setPayment(pm.id)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      payment === pm.id ? 'border-primary bg-primary/10' : 'border-border bg-muted'
+                    }`}
+                  >
+                    <span className="text-xl">{pm.icon}</span>
+                    <span className="font-bold text-foreground text-xs flex-1 text-left">{pm.label}</span>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      payment === pm.id ? 'border-primary' : 'border-muted-foreground'
+                    }`}>
+                      {payment === pm.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
               {/* Form fields */}
               <div className="space-y-4">
                 <div>
@@ -123,23 +187,38 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                 )}
               </div>
 
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+                  <p className="text-red-400 text-sm font-medium">{error}</p>
+                </div>
+              )}
+
               <button
                 onClick={handleSubmit}
-                disabled={!form.name || !form.phone}
-                className="w-full py-4 bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest rounded-2xl hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!form.name || !form.phone || loading}
+                className="w-full py-4 bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest rounded-2xl hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Choisir le Paiement →
+                {loading ? (
+                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                    <path d="M12 2a10 10 0 0110 10" strokeLinecap="round" />
+                  </svg>
+                ) : payment === 'geniuspay' ? (
+                  <>Payer avec Genius Pay →</>
+                ) : (
+                  <>Choisir le Paiement →</>
+                )}
               </button>
             </div>
           )}
 
-          {/* Step 2: Payment */}
+          {/* Step 2: Payment (non-Genius Pay) */}
           {step === 'payment' && (
             <div className="space-y-5">
               <p className="text-muted-foreground text-sm">Choisissez votre mode de paiement pour <span className="text-primary font-black">{grandTotal.toLocaleString('fr-FR')} XOF</span></p>
 
               <div className="space-y-3">
-                {paymentMethods.map(pm => (
+                {paymentMethods.filter(p => p.id !== 'geniuspay').map(pm => (
                   <button
                     key={pm.id}
                     onClick={() => setPayment(pm.id)}
@@ -162,7 +241,7 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
               {payment !== 'cash' && (
                 <div className="bg-muted rounded-2xl p-4 text-sm text-muted-foreground">
                   <p className="font-black text-foreground mb-1">Instructions de paiement</p>
-                  <p>Envoyez <span className="text-primary font-black">{grandTotal.toLocaleString('fr-FR')} XOF</span> au numéro <span className="font-bold text-foreground">+226 70 12 34 56</span> via {paymentMethods.find(p => p.id === payment)?.label}.</p>
+                  <p>Envoyez <span className="text-primary font-black">{grandTotal.toLocaleString('fr-FR')} XOF</span> au numéro <span className="font-bold text-foreground">{settings.whatsappNumber}</span> via {paymentMethods.find(p => p.id === payment)?.label}.</p>
                   <p className="mt-1">Référence: <span className="font-bold text-foreground">RD-{Date.now().toString().slice(-6)}</span></p>
                 </div>
               )}
@@ -185,7 +264,7 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                       <path d="M12 2a10 10 0 0110 10" strokeLinecap="round" />
                     </svg>
                   ) : (
-                    <>Confirmer</>
+                    <>Confirmer la Commande</>
                   )}
                 </button>
               </div>
@@ -216,11 +295,11 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Livraison estimée</span>
-                  <span className="font-black text-foreground">25-35 min</span>
+                  <span className="font-black text-foreground">{settings.estimatedDelivery}</span>
                 </div>
               </div>
               <a
-                href={`https://wa.me/22670123456?text=Bonjour%20RestoDounia%2C%20j'ai%20passé%20une%20commande%20de%20${grandTotal}%20XOF.%20Mon%20nom%20est%20${encodeURIComponent(form.name)}.`}
+                href={`https://wa.me/${waNumber}?text=Bonjour%20${encodeURIComponent(settings.restaurantName)}%2C%20j%27ai%20pass%C3%A9%20une%20commande%20de%20${grandTotal}%20XOF.%20Mon%20nom%20est%20${encodeURIComponent(form.name)}.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-4 bg-[#25D366] text-white font-black text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"

@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import '../styles/tailwind.css';
+import SiteSettingsWrapper from '@/components/SiteSettingsWrapper';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -35,8 +36,10 @@ export default function RootLayout({
   return (
     <html lang="fr" className={plusJakartaSans.variable}>
       <body className={plusJakartaSans.className}>
-        {children}
-</body>
+        <SiteSettingsWrapper>
+          {children}
+        </SiteSettingsWrapper>
+      </body>
     </html>
   );
 }

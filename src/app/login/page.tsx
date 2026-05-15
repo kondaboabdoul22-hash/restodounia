@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import Icon from '@/components/ui/AppIcon';
+import SiteSettingsProvider, { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const { settings } = useSiteSettings();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,9 +25,8 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    // Mock authentication
     setTimeout(() => {
-      if (form.email === 'admin@restodounia.bf' && form.password === 'admin123') {
+      if (form.email === settings.adminEmail && form.password === settings.adminPassword) {
         router.push('/admin-dashboard');
       } else {
         setError('Email ou mot de passe incorrect.');
@@ -48,7 +49,7 @@ export default function LoginPage() {
           <div className="flex flex-col items-center gap-3 mb-8">
             <div className="flex items-center gap-2.5">
               <AppLogo size={44} />
-              <span className="font-black text-2xl tracking-tight text-foreground">RestoDounia</span>
+              <span className="font-black text-2xl tracking-tight text-foreground">{settings.restaurantName}</span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Espace Administrateur</p>
           </div>
@@ -72,7 +73,7 @@ export default function LoginPage() {
                 type="email"
                 value={form.email}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                placeholder="admin@restodounia.bf"
+                placeholder={settings.adminEmail}
                 className="w-full bg-muted border border-border rounded-xl px-4 py-3.5 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
                 autoComplete="email"
               />
@@ -123,9 +124,9 @@ export default function LoginPage() {
 
           {/* Demo credentials hint */}
           <div className="mt-6 p-4 bg-muted rounded-2xl border border-border">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Accès démo</p>
-            <p className="text-xs text-muted-foreground">Email: <span className="text-foreground font-bold">admin@restodounia.bf</span></p>
-            <p className="text-xs text-muted-foreground">Mot de passe: <span className="text-foreground font-bold">admin123</span></p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Identifiants actuels</p>
+            <p className="text-xs text-muted-foreground">Email: <span className="text-foreground font-bold">{settings.adminEmail}</span></p>
+            <p className="text-xs text-muted-foreground">Mot de passe: <span className="text-foreground font-bold">{settings.adminPassword}</span></p>
           </div>
 
           <div className="mt-6 text-center">
@@ -136,5 +137,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <SiteSettingsProvider>
+      <LoginForm />
+    </SiteSettingsProvider>
   );
 }

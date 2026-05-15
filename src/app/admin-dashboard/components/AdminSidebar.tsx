@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import { AdminTab } from '../page';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -20,6 +21,7 @@ const navItems: { tab: AdminTab; label: string; icon: string }[] = [
 ];
 
 export default function AdminSidebar({ activeTab, setActiveTab, isOpen, onClose }: AdminSidebarProps) {
+  const { settings } = useSiteSettings();
   return (
     <>
       {/* Mobile overlay */}
@@ -37,7 +39,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, isOpen, onClose 
           <div className="flex items-center gap-2.5">
             <AppLogo size={32} />
             <div>
-              <p className="font-black text-foreground text-sm leading-tight">RestoDounia</p>
+              <p className="font-black text-foreground text-sm leading-tight">{settings.restaurantName}</p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Administration</p>
             </div>
           </div>

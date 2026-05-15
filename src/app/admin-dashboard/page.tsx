@@ -6,10 +6,21 @@ import AdminStats from './components/AdminStats';
 import AdminOrders from './components/AdminOrders';
 import AdminMenu from './components/AdminMenu';
 import AdminSettings from './components/AdminSettings';
+import SiteSettingsProvider from '@/contexts/SiteSettingsContext';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 export type AdminTab = 'dashboard' | 'orders' | 'menu' | 'settings';
 
 export default function AdminDashboardPage() {
+  return (
+    <SiteSettingsProvider>
+      <AdminDashboardContent />
+    </SiteSettingsProvider>
+  );
+}
+
+function AdminDashboardContent() {
+  const { settings } = useSiteSettings();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -43,7 +54,7 @@ export default function AdminDashboardPage() {
                 {activeTab === 'menu' && 'Gestion du Menu'}
                 {activeTab === 'settings' && 'Paramètres du Site'}
               </h1>
-              <p className="text-muted-foreground text-xs">RestoDounia Admin</p>
+              <p className="text-muted-foreground text-xs">{settings.restaurantName} Admin</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

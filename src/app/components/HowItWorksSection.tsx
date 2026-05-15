@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 const steps = [
   {
@@ -30,6 +31,7 @@ const steps = [
 ];
 
 export default function HowItWorksSection() {
+  const { settings } = useSiteSettings();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -94,10 +96,11 @@ export default function HowItWorksSection() {
           <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground mb-6">Moyens de paiement acceptés</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             {[
-              { label: 'Orange Money', color: '#FF6600', emoji: '🟠' },
-              { label: 'Moov Money', color: '#00A651', emoji: '🟢' },
-              { label: 'Wave', color: '#1DC2FF', emoji: '🔵' },
-              { label: 'Cash', color: '#9A8F87', emoji: '💵' },
+              ...(settings.paymentOrange ? [{ label: 'Orange Money', color: '#FF6600', emoji: '🟠' }] : []),
+              ...(settings.paymentMoov ? [{ label: 'Moov Money', color: '#00A651', emoji: '🟢' }] : []),
+              ...(settings.paymentWave ? [{ label: 'Wave', color: '#1DC2FF', emoji: '🔵' }] : []),
+              ...(settings.paymentCash ? [{ label: 'Cash', color: '#9A8F87', emoji: '💵' }] : []),
+              ...(settings.paymentGeniusPay ? [{ label: 'Genius Pay', color: '#6C5CE7', emoji: '💳' }] : []),
             ]?.map((p, i) => (
               <div key={i} className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-muted border border-border">
                 <span className="text-lg">{p?.emoji}</span>

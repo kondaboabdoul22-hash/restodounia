@@ -16,6 +16,8 @@ interface Order {
   status: OrderStatus;
   time: string;
   date: string;
+  cancelReason?: string;
+  cancelledAt?: string;
 }
 
 const initialOrders: Order[] = [
@@ -48,15 +50,59 @@ const nextActionLabel: Record<OrderStatus, string> = {
   annule: 'Annulé',
 };
 
+const STORAGE_KEY = 'restodounia_orders';
+
+function loadOrders(): Order[] {
+  if (typeof window === 'undefined') return initialOrders;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return initialOrders;
+}
+
+function saveOrders(orders: Order[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  } catch {}
+}
+
 export default function AdminOrders() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<'all' | OrderStatus>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+
+  React.useEffect(() => {
+    setOrders(loadOrders());
+  }, []);
+
+  React.useEffect(() => {
+    if (orders.length > 0) saveOrders(orders);
+  }, [orders]);
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
 
   const updateStatus = (id: string, newStatus: OrderStatus) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+  };
+
+  const confirmCancel = () => {
+    if (!cancelTarget || !cancelReason.trim()) return;
+    const now = new Date();
+    setOrders(prev => prev.map(o =>
+      o.id === cancelTarget
+        ? { ...o, status: 'annule', cancelReason: cancelReason.trim(), cancelledAt: now.toLocaleString('fr-FR') }
+        : o
+    ));
+    setCancelTarget(null);
+    setCancelReason('');
+  };
+
+  const openCancelModal = (id: string) => {
+    setCancelTarget(id);
+    setCancelReason('');
   };
 
   const counts = {
@@ -167,6 +213,17 @@ export default function AdminOrders() {
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Articles commandés</p>
                       <p className="font-medium text-foreground text-sm">{order.items}</p>
                     </div>
+                    {order.status === 'annule' && order.cancelReason && (
+                      <div className="sm:col-span-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Motif d'annulation</p>
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                          <p className="font-medium text-sm text-red-400">{order.cancelReason}</p>
+                          {order.cancelledAt && (
+                            <p className="text-xs text-muted-foreground mt-1">Annulé le {order.cancelledAt}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -181,7 +238,7 @@ export default function AdminOrders() {
                     )}
                     {order.status === 'en_attente' && (
                       <button
-                        onClick={() => updateStatus(order.id, 'annule')}
+                        onClick={() => openCancelModal(order.id)}
                         className="px-5 py-2.5 bg-red-500/15 text-red-400 border border-red-500/30 font-black text-xs uppercase tracking-wider rounded-xl hover:bg-red-500/25 transition-colors"
                       >
                         Annuler
@@ -203,6 +260,41 @@ export default function AdminOrders() {
           );
         })}
       </div>
+    </div>
+
+      {/* Cancel modal */}
+      {cancelTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <h3 className="font-black text-lg text-foreground">Annuler la commande</h3>
+            <p className="text-sm text-muted-foreground">
+              Veuillez indiquer le motif de l'annulation pour la commande <strong className="text-foreground">{cancelTarget}</strong>.
+            </p>
+            <textarea
+              autoFocus
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+              placeholder="Ex: Client indisponible, produit en rupture..."
+              className="w-full h-24 px-4 py-3 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary resize-none"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setCancelTarget(null); setCancelReason(''); }}
+                className="px-5 py-2.5 bg-muted text-muted-foreground font-black text-xs uppercase tracking-wider rounded-xl hover:text-foreground transition-colors"
+              >
+                Retour
+              </button>
+              <button
+                onClick={confirmCancel}
+                disabled={!cancelReason.trim()}
+                className="px-5 py-2.5 bg-red-500/15 text-red-400 border border-red-500/30 font-black text-xs uppercase tracking-wider rounded-xl hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Confirmer l'annulation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

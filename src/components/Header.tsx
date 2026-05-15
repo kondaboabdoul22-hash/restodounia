@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import Icon from '@/components/ui/AppIcon';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 interface HeaderProps {
   variant?: 'default' | 'transparent';
@@ -12,6 +13,7 @@ interface HeaderProps {
 }
 
 export default function Header({ variant = 'default', cartCount = 0, onCartClick }: HeaderProps) {
+  const { settings } = useSiteSettings();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -46,7 +48,7 @@ export default function Header({ variant = 'default', cartCount = 0, onCartClick
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
           <AppLogo size={36} onClick={() => {}} />
-          <span className="font-black text-xl tracking-tight text-foreground">RestoDounia</span>
+          <span className="font-black text-xl tracking-tight text-foreground">{settings.restaurantName}</span>
         </Link>
 
         {/* Desktop Nav */}

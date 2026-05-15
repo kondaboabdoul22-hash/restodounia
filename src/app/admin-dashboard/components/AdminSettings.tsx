@@ -1,213 +1,288 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSiteSettings, HeroSlide } from '@/contexts/SiteSettingsContext';
 
-interface SiteSettings {
-  restaurantName: string;
-  whatsappNumber: string;
-  deliveryFee: number;
-  openHours: string;
-  address: string;
-  payments: {
-    orange: boolean;
-    moov: boolean;
-    wave: boolean;
-    cash: boolean;
-  };
-  promoEnabled: boolean;
-  promoCode: string;
-  promoDiscount: number;
-}
+type Section = 'restaurant' | 'hero' | 'social' | 'sections' | 'livraison' | 'paiements' | 'promo' | 'seo' | 'securite' | 'maintenance';
 
-const defaultSettings: SiteSettings = {
-  restaurantName: 'RestoDounia',
-  whatsappNumber: '+226 70 12 34 56',
-  deliveryFee: 500,
-  openHours: '11h00 - 22h00, 7j/7',
-  address: 'Secteur 15, Ouagadougou, Burkina Faso',
-  payments: {
-    orange: true,
-    moov: true,
-    wave: true,
-    cash: true,
-  },
-  promoEnabled: false,
-  promoCode: 'DOUNIA10',
-  promoDiscount: 10,
-};
+const sections: { key: Section; label: string; icon: string }[] = [
+  { key: 'restaurant', label: 'Restaurant', icon: '🏪' },
+  { key: 'hero', label: 'Hero & Contenu', icon: '🖼️' },
+  { key: 'social', label: 'Réseaux sociaux', icon: '📱' },
+  { key: 'livraison', label: 'Livraison', icon: '🛵' },
+  { key: 'sections', label: 'Sections du site', icon: '📄' },
+  { key: 'paiements', label: 'Paiements', icon: '💳' },
+  { key: 'promo', label: 'Code promo', icon: '🎁' },
+  { key: 'seo', label: 'SEO', icon: '🔍' },
+  { key: 'securite', label: 'Sécurité', icon: '🔒' },
+  { key: 'maintenance', label: 'Maintenance', icon: '⚙️' },
+];
 
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
-  const [saved, setSaved] = useState(false);
+  const { settings, updateSettings, resetSettings, saved } = useSiteSettings();
+  const [activeSection, setActiveSection] = useState<Section>('restaurant');
 
-  const handleSave = () => {
-    // Mock save
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const update = (partial: Partial<typeof settings>) => updateSettings(partial);
+
+  const updatePayment = (key: 'paymentOrange' | 'paymentMoov' | 'paymentWave' | 'paymentCash' | 'paymentGeniusPay', value: boolean) => {
+    update({ [key]: value });
   };
 
-  const updatePayment = (key: keyof SiteSettings['payments'], value: boolean) => {
-    setSettings(s => ({ ...s, payments: { ...s.payments, [key]: value } }));
+  const updateSlide = (index: number, slide: Partial<HeroSlide>) => {
+    const slides = [...settings.heroSlides];
+    slides[index] = { ...slides[index], ...slide };
+    update({ heroSlides: slides });
+  };
+
+  const addSlide = () => {
+    update({
+      heroSlides: [...settings.heroSlides, { tag: 'Nouveau', headline: 'Titre', sub: 'Description', image: '', alt: '' }],
+    });
+  };
+
+  const removeSlide = (index: number) => {
+    if (settings.heroSlides.length <= 1) return;
+    update({ heroSlides: settings.heroSlides.filter((_, i) => i !== index) });
+  };
+
+  const Input = ({ label, value, onChange, type = 'text', min, max, placeholder }: {
+    label: string; value: string | number; onChange: (v: string) => void; type?: string; min?: number; max?: number; placeholder?: string;
+  }) => (
+    <div>
+      <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        min={min}
+        max={max}
+        placeholder={placeholder}
+        className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+      />
+    </div>
+  );
+
+  const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
+    <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
+      <span className="font-black text-foreground text-sm">{label}</span>
+      <label className="toggle-switch" aria-label={label}>
+        <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+        <span className="toggle-slider" />
+      </label>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'restaurant':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Informations du Restaurant</h3>
+            <Input label="Nom du restaurant" value={settings.restaurantName} onChange={v => update({ restaurantName: v })} />
+            <Input label="Slogan" value={settings.tagline} onChange={v => update({ tagline: v })} />
+            <Input label="Description" value={settings.description} onChange={v => update({ description: v })} />
+            <Input label="Email de contact" value={settings.contactEmail} onChange={v => update({ contactEmail: v })} />
+            <Input label="Numéro WhatsApp" value={settings.whatsappNumber} onChange={v => update({ whatsappNumber: v })} />
+            <Input label="Téléphone" value={settings.phoneNumber} onChange={v => update({ phoneNumber: v })} />
+            <Input label="Adresse" value={settings.address} onChange={v => update({ address: v })} />
+            <Input label="Horaires d'ouverture" value={settings.openHours} onChange={v => update({ openHours: v })} />
+          </div>
+        );
+
+      case 'hero':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Contenu du Hero</h3>
+            <Input label="Titre principal" value={settings.heroTagline} onChange={v => update({ heroTagline: v })} />
+            <Input label="Sous-titre" value={settings.heroSubheadline} onChange={v => update({ heroSubheadline: v })} />
+            <Input label="Commandes/jour (stat)" value={settings.statsOrderPerDay} onChange={v => update({ statsOrderPerDay: v })} />
+            <Input label="Temps livraison (stat)" value={settings.statsDeliveryTime} onChange={v => update({ statsDeliveryTime: v })} />
+            <Input label="Note (stat)" value={settings.statsRating} onChange={v => update({ statsRating: v })} />
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Slides du Hero ({settings.heroSlides.length})</h4>
+              {settings.heroSlides.map((slide, i) => (
+                <div key={i} className="bg-muted rounded-xl p-4 mb-4 space-y-3 border border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-foreground">Slide {i + 1}</span>
+                    {settings.heroSlides.length > 1 && (
+                      <button onClick={() => removeSlide(i)} className="text-red-400 text-xs font-black uppercase hover:text-red-300">Supprimer</button>
+                    )}
+                  </div>
+                  <Input label="Tag" value={slide.tag} onChange={v => updateSlide(i, { tag: v })} />
+                  <Input label="Titre (utilisez \\n pour un retour à la ligne)" value={slide.headline} onChange={v => updateSlide(i, { headline: v })} />
+                  <Input label="Sous-titre" value={slide.sub} onChange={v => updateSlide(i, { sub: v })} />
+                  <Input label="URL de l'image" value={slide.image} onChange={v => updateSlide(i, { image: v })} />
+                  <Input label="Texte alternatif" value={slide.alt} onChange={v => updateSlide(i, { alt: v })} />
+                </div>
+              ))}
+              <button onClick={addSlide} className="px-4 py-2 bg-primary text-primary-foreground font-black text-xs uppercase tracking-wider rounded-xl hover:bg-accent transition-colors">
+                + Ajouter une slide
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'social':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Réseaux Sociaux</h3>
+            <Input label="Facebook URL" value={settings.facebookUrl} onChange={v => update({ facebookUrl: v })} />
+            <Input label="Instagram URL" value={settings.instagramUrl} onChange={v => update({ instagramUrl: v })} />
+            <Input label="Twitter / X URL" value={settings.twitterUrl} onChange={v => update({ twitterUrl: v })} />
+            <Input label="TikTok URL" value={settings.tiktokUrl} onChange={v => update({ tiktokUrl: v })} />
+          </div>
+        );
+
+      case 'livraison':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Paramètres de Livraison</h3>
+            <Input label="Frais de livraison (XOF)" type="number" value={settings.deliveryFee} onChange={v => update({ deliveryFee: parseInt(v) || 0 })} />
+            <Input label="Montant minimum de commande (XOF)" type="number" value={settings.minOrderAmount} onChange={v => update({ minOrderAmount: parseInt(v) || 0 })} />
+            <Input label="Temps de livraison estimé" value={settings.estimatedDelivery} onChange={v => update({ estimatedDelivery: v })} />
+          </div>
+        );
+
+      case 'sections':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Afficher / Masquer les Sections</h3>
+            <p className="text-muted-foreground text-sm">Activez ou désactivez chaque section du site.</p>
+            <Toggle label="Section Hero (accueil)" checked={settings.showHero} onChange={v => update({ showHero: v })} />
+            <Toggle label="Comment ça marche" checked={settings.showHowItWorks} onChange={v => update({ showHowItWorks: v })} />
+            <Toggle label="Avis clients" checked={settings.showTestimonials} onChange={v => update({ showTestimonials: v })} />
+            <Toggle label="Section CTA (Appel à l'action)" checked={settings.showCTA} onChange={v => update({ showCTA: v })} />
+            <Toggle label="Bouton WhatsApp flottant" checked={settings.showWhatsAppBtn} onChange={v => update({ showWhatsAppBtn: v })} />
+          </div>
+        );
+
+      case 'paiements':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Moyens de Paiement</h3>
+            <p className="text-muted-foreground text-sm">Activez ou désactivez les modes de paiement disponibles.</p>
+            <Toggle label="Orange Money" checked={settings.paymentOrange} onChange={v => updatePayment('paymentOrange', v)} />
+            <Toggle label="Moov Money" checked={settings.paymentMoov} onChange={v => updatePayment('paymentMoov', v)} />
+            <Toggle label="Wave" checked={settings.paymentWave} onChange={v => updatePayment('paymentWave', v)} />
+            <Toggle label="Paiement à la livraison" checked={settings.paymentCash} onChange={v => updatePayment('paymentCash', v)} />
+            <Toggle label="Genius Pay (Carte bancaire, Orange, Moov, Wave)" checked={settings.paymentGeniusPay} onChange={v => updatePayment('paymentGeniusPay', v)} />
+          </div>
+        );
+
+      case 'promo':
+        return (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-foreground text-lg">Code Promo</h3>
+              <Toggle label="Activer promo" checked={settings.promoEnabled} onChange={v => update({ promoEnabled: v })} />
+            </div>
+            {settings.promoEnabled && (
+              <>
+                <Input label="Code promo" value={settings.promoCode} onChange={v => update({ promoCode: v.toUpperCase() })} />
+                <Input label="Réduction (%)" type="number" min={1} max={100} value={settings.promoDiscount} onChange={v => update({ promoDiscount: parseInt(v) || 0 })} />
+                <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/30 rounded-xl">
+                  <span className="text-xl">✅</span>
+                  <p className="text-sm text-foreground font-medium">
+                    Code <span className="font-black text-primary">{settings.promoCode}</span> actif — {settings.promoDiscount}% de réduction.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        );
+
+      case 'seo':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Référencement (SEO)</h3>
+            <Input label="Meta Title" value={settings.metaTitle} onChange={v => update({ metaTitle: v })} />
+            <Input label="Meta Description" value={settings.metaDescription} onChange={v => update({ metaDescription: v })} />
+            <Input label="Open Graph Title" value={settings.ogTitle} onChange={v => update({ ogTitle: v })} />
+            <Input label="Open Graph Description" value={settings.ogDescription} onChange={v => update({ ogDescription: v })} />
+          </div>
+        );
+
+      case 'securite':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Identifiants Administrateur</h3>
+            <p className="text-muted-foreground text-sm">Modifiez l'email et le mot de passe de connexion à l'administration.</p>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+              <p className="text-amber-400 text-xs font-medium">
+                ⚠️ Les identifiants sont stockés localement dans votre navigateur. Assurez-vous de les mémoriser.
+              </p>
+            </div>
+            <Input label="Email administrateur" value={settings.adminEmail} onChange={v => update({ adminEmail: v })} />
+            <Input label="Nouveau mot de passe" type="password" value={settings.adminPassword} onChange={v => update({ adminPassword: v })} placeholder="Entrez un nouveau mot de passe" />
+          </div>
+        );
+
+      case 'maintenance':
+        return (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-foreground text-lg">Mode Maintenance</h3>
+              <Toggle label="Activer la maintenance" checked={settings.maintenanceMode} onChange={v => update({ maintenanceMode: v })} />
+            </div>
+            {settings.maintenanceMode && (
+              <Input label="Message de maintenance" value={settings.maintenanceMessage} onChange={v => update({ maintenanceMessage: v })} />
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="max-w-2xl space-y-6">
-      {/* Restaurant Info */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-        <h3 className="font-black text-foreground text-lg flex items-center gap-2">
-          <span>🏪</span> Informations du Restaurant
-        </h3>
-
-        <div>
-          <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Nom du Restaurant</label>
-          <input
-            type="text"
-            value={settings.restaurantName}
-            onChange={e => setSettings(s => ({ ...s, restaurantName: e.target.value }))}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Numéro WhatsApp</label>
-          <input
-            type="tel"
-            value={settings.whatsappNumber}
-            onChange={e => setSettings(s => ({ ...s, whatsappNumber: e.target.value }))}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Adresse</label>
-          <input
-            type="text"
-            value={settings.address}
-            onChange={e => setSettings(s => ({ ...s, address: e.target.value }))}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Horaires d'ouverture</label>
-          <input
-            type="text"
-            value={settings.openHours}
-            onChange={e => setSettings(s => ({ ...s, openHours: e.target.value }))}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Frais de Livraison (XOF)</label>
-          <input
-            type="number"
-            value={settings.deliveryFee}
-            onChange={e => setSettings(s => ({ ...s, deliveryFee: parseInt(e.target.value) || 0 }))}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-          />
-        </div>
-      </div>
-
-      {/* Payment Methods */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <h3 className="font-black text-foreground text-lg flex items-center gap-2">
-          <span>💳</span> Moyens de Paiement
-        </h3>
-        <p className="text-muted-foreground text-sm">Activez ou désactivez les modes de paiement disponibles pour vos clients.</p>
-
-        {([
-          { key: 'orange', label: 'Orange Money', emoji: '🟠' },
-          { key: 'moov', label: 'Moov Money', emoji: '🟢' },
-          { key: 'wave', label: 'Wave', emoji: '🔵' },
-          { key: 'cash', label: 'Paiement à la livraison', emoji: '💵' },
-        ] as const).map(pm => (
-          <div key={pm.key} className="flex items-center justify-between p-4 bg-muted rounded-xl">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{pm.emoji}</span>
-              <span className="font-black text-foreground text-sm">{pm.label}</span>
-            </div>
-            <label className="toggle-switch" aria-label={`${settings.payments[pm.key] ? 'Désactiver' : 'Activer'} ${pm.label}`}>
-              <input
-                type="checkbox"
-                checked={settings.payments[pm.key]}
-                onChange={e => updatePayment(pm.key, e.target.checked)}
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
+    <div className="flex gap-6 flex-col lg:flex-row">
+      {/* Sidebar navigation */}
+      <div className="lg:w-64 flex-shrink-0 space-y-1">
+        {sections.map(sec => (
+          <button
+            key={sec.key}
+            onClick={() => setActiveSection(sec.key)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-black transition-all ${
+              activeSection === sec.key
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
+            <span>{sec.icon}</span>
+            <span className="uppercase tracking-wider text-xs">{sec.label}</span>
+          </button>
         ))}
+        <button
+          onClick={resetSettings}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-black text-red-400 hover:bg-red-500/10 transition-all mt-6"
+        >
+          <span>↺</span>
+          <span className="uppercase tracking-wider text-xs">Réinitialiser</span>
+        </button>
       </div>
 
-      {/* Promo / Réduction */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-black text-foreground text-lg flex items-center gap-2">
-            <span>🎁</span> Code Promo
-          </h3>
-          <label className="toggle-switch" aria-label="Activer les codes promo">
-            <input
-              type="checkbox"
-              checked={settings.promoEnabled}
-              onChange={e => setSettings(s => ({ ...s, promoEnabled: e.target.checked }))}
-            />
-            <span className="toggle-slider" />
-          </label>
-        </div>
+      {/* Content */}
+      <div className="flex-1 bg-card border border-border rounded-2xl p-6 space-y-5">
+        {renderContent()}
 
-        {settings.promoEnabled && (
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Code Promo</label>
-              <input
-                type="text"
-                value={settings.promoCode}
-                onChange={e => setSettings(s => ({ ...s, promoCode: e.target.value.toUpperCase() }))}
-                placeholder="DOUNIA10"
-                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm font-bold tracking-widest uppercase"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Réduction (%)</label>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={settings.promoDiscount}
-                onChange={e => setSettings(s => ({ ...s, promoDiscount: parseInt(e.target.value) || 0 }))}
-                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/30 rounded-xl">
-              <span className="text-xl">✅</span>
-              <p className="text-sm text-foreground font-medium">
-                Code <span className="font-black text-primary">{settings.promoCode}</span> actif — {settings.promoDiscount}% de réduction sur toute commande.
-              </p>
-            </div>
+        {/* Save indicator */}
+        <div className="pt-4 border-t border-border">
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-xl transition-all ${
+            saved ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
+          }`}>
+            {saved ? (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <span className="font-black text-xs uppercase tracking-wider">Paramètres enregistrés automatiquement ✓</span>
+              </>
+            ) : (
+              <span className="font-black text-xs uppercase tracking-wider">Les modifications sont sauvegardées automatiquement</span>
+            )}
           </div>
-        )}
+        </div>
       </div>
-
-      {/* Save button */}
-      <button
-        onClick={handleSave}
-        className={`w-full py-4 font-black text-sm uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 ${
-          saved
-            ? 'bg-success text-white' :'bg-primary text-primary-foreground hover:bg-accent'
-        }`}
-      >
-        {saved ? (
-          <>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-            Paramètres Enregistrés !
-          </>
-        ) : (
-          <>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-            Enregistrer les Paramètres
-          </>
-        )}
-      </button>
     </div>
   );
 }
