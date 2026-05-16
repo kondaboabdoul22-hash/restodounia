@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useCart } from './CartProvider';
 import { useSiteSettings } from '@/contexts/SiteSettingsContext';
@@ -18,6 +18,19 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
   const [payment, setPayment] = useState('yengapay');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [leekpayReady, setLeekpayReady] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || (window as any).LeekPay) {
+      setLeekpayReady(!!(window as any).LeekPay);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://leekpay.fr/js/leekpay.js';
+    script.async = true;
+    script.onload = () => setLeekpayReady(true);
+    document.head.appendChild(script);
+  }, []);
 
   const paymentMethods = [
     ...(settings.paymentYengaPay ? [{ id: 'yengapay', label: 'Mobile Money & Carte (LeekPay)', color: '#6366F1', icon: '💳' }] : []),
@@ -36,36 +49,29 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
     }
   };
 
-  const handleYengaPay = async () => {
+  const handleYengaPay = () => {
+    if (!leekpayReady) {
+      setError('LeekPay pas encore chargé. Réessayez.');
+      return;
+    }
     setLoading(true);
     setError('');
-    const orderId = `RD-${Date.now().toString().slice(-6)}`;
 
-    try {
-      const res = await fetch('/api/yengapay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: grandTotal,
-          customerName: form.name,
-          customerPhone: form.phone,
-          orderId,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.paymentUrl) {
+    const LeekPay = (window as any).LeekPay;
+    LeekPay.checkout({
+      amount: grandTotal,
+      currency: 'XOF',
+      apiKey: 'pk_live_38GkkU4VNHDm8C6QAMbIW2UCMudCGRFr',
+      description: `Commande RestoDounia`,
+      onSuccess: (data: any) => {
         clearCart();
-        window.location.href = data.paymentUrl;
-      } else {
-        setError(data.error || 'Erreur de paiement YengaPay');
+        window.location.href = `/payment/success?order=RD-${Date.now().toString().slice(-6)}`;
+      },
+      onCancel: () => {
+        setError('Paiement annulé');
         setLoading(false);
-      }
-    } catch {
-      setError('Impossible de contacter YengaPay');
-      setLoading(false);
-    }
+      },
+    });
   };
 
   const handleConfirm = () => {
