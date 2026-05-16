@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSiteSettings, HeroSlide } from '@/contexts/SiteSettingsContext';
 
 type Section = 'dashboard' | 'restaurant' | 'hero' | 'social' | 'livraison' | 'commandes' | 'sections' | 'paiements' | 'promo' | 'seo' | 'securite' | 'maintenance';
@@ -49,20 +49,33 @@ export default function AdminSettings() {
 
   const Input = ({ label, value, onChange, type = 'text', min, max, placeholder }: {
     label: string; value: string | number; onChange: (v: string) => void; type?: string; min?: number; max?: number; placeholder?: string;
-  }) => (
-    <div>
-      <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        min={min}
-        max={max}
-        placeholder={placeholder}
-        className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm touch-manipulation"
-      />
-    </div>
-  );
+  }) => {
+    const [local, setLocal] = useState(String(value));
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+      if (document.activeElement !== inputRef.current) {
+        setLocal(String(value));
+      }
+    }, [value]);
+
+    return (
+      <div>
+        <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">{label}</label>
+        <input
+          ref={inputRef}
+          type={type}
+          value={local}
+          onChange={e => setLocal(e.target.value)}
+          onBlur={() => onChange(local)}
+          min={min}
+          max={max}
+          placeholder={placeholder}
+          className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm touch-manipulation"
+        />
+      </div>
+    );
+  };
 
   const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
     <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
