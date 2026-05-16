@@ -166,7 +166,7 @@ export default function AdminSettings() {
             <Toggle label="Moov Money" checked={settings.paymentMoov} onChange={v => updatePayment('paymentMoov', v)} />
             <Toggle label="Wave" checked={settings.paymentWave} onChange={v => updatePayment('paymentWave', v)} />
             <Toggle label="Paiement à la livraison" checked={settings.paymentCash} onChange={v => updatePayment('paymentCash', v)} />
-            <Toggle label="YengaPay (Orange Money, Moov, Telecel, Coris, PayPal)" checked={settings.paymentYengaPay} onChange={v => updatePayment('paymentYengaPay', v)} />
+            <Toggle label="LeekPay (Mobile Money & Carte)" checked={settings.paymentYengaPay} onChange={v => updatePayment('paymentYengaPay', v)} />
           </div>
         );
 

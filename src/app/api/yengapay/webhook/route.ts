@@ -1,46 +1,70 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+
+const PUBLIC_KEY = process.env.LEEKPAY_PUBLIC_KEY;
+
+function verifySignature(body: string, signature: string): boolean {
+  if (!PUBLIC_KEY) return false;
+  try {
+    const computed = crypto
+      .createHmac('sha256', PUBLIC_KEY)
+      .update(body, 'utf8')
+      .digest('hex');
+    return crypto.timingSafeEqual(
+      Buffer.from(computed),
+      Buffer.from(signature)
+    );
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { event, data, status, reference } = body;
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-leekpay-signature') || req.headers.get('X-LeekPay-Signature');
 
-    const eventType = event || body.type || status;
+    if (PUBLIC_KEY && signature) {
+      if (!verifySignature(rawBody, signature)) {
+        return NextResponse.json({ error: 'Signature invalide' }, { status: 401 });
+      }
+    }
 
-    switch (eventType) {
+    let payload: any;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: 'Corps JSON invalide' }, { status: 400 });
+    }
+
+    const { event, transaction } = payload;
+
+    switch (event) {
       case 'payment.success':
-      case 'completed':
-      case 'success':
-        console.log(`Paiement YengaPay réussi: ${reference || data?.reference || 'N/A'}`);
+        console.log(`Paiement LeekPay réussi: ${transaction?.id} - ${transaction?.amount} XOF`);
         break;
 
       case 'payment.failed':
-      case 'failed':
-        console.warn(`Paiement YengaPay échoué: ${reference || data?.reference || 'N/A'}`);
+        console.warn(`Paiement LeekPay échoué: ${transaction?.id}`);
         break;
 
       case 'payment.cancelled':
-      case 'cancelled':
-        console.warn(`Paiement YengaPay annulé: ${reference || data?.reference || 'N/A'}`);
+        console.warn(`Paiement LeekPay annulé: ${transaction?.id}`);
         break;
 
-      case 'webhook.test':
-      case 'test':
-        return NextResponse.json({ received: true, message: 'Webhook YengaPay OK' });
-
       default:
-        console.log(`Événement YengaPay: ${eventType}`, reference || data?.reference || '');
+        console.log(`Événement LeekPay: ${event}`);
     }
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error('YengaPay webhook error:', err);
+    console.error('LeekPay webhook error:', err);
     return NextResponse.json({ error: 'Erreur interne' }, { status: 500 });
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ received: true, message: 'Webhook YengaPay OK' });
+  return NextResponse.json({ received: true, message: 'Webhook LeekPay OK' });
 }
 
 export const runtime = 'nodejs';

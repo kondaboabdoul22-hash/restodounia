@@ -20,7 +20,7 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
   const [error, setError] = useState('');
 
   const paymentMethods = [
-    ...(settings.paymentYengaPay ? [{ id: 'yengapay', label: 'Carte, Orange, Moov, Telecel, Coris, PayPal', color: '#1a73e8', icon: '💳' }] : []),
+    ...(settings.paymentYengaPay ? [{ id: 'yengapay', label: 'Mobile Money & Carte (LeekPay)', color: '#6366F1', icon: '💳' }] : []),
     ...(settings.paymentOrange ? [{ id: 'orange', label: 'Orange Money', color: '#FF6600', icon: '🟠' }] : []),
     ...(settings.paymentMoov ? [{ id: 'moov', label: 'Moov Money', color: '#00A651', icon: '🟢' }] : []),
     ...(settings.paymentWave ? [{ id: 'wave', label: 'Wave', color: '#1DC2FF', icon: '🔵' }] : []),
