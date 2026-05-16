@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 type OrderStatus = 'en_attente' | 'en_preparation' | 'livre' | 'annule';
 
@@ -29,12 +30,15 @@ const initialOrders: Order[] = [
   { id: 'RD-847258', customer: 'Aïssata Diallo', phone: '+226 65 88 12 44', address: 'Karpala, Ouagadougou', items: 'Alloco Poulet ×1, Salade Fruits ×1', total: 3200, payment: 'Wave', delivery: 'Livraison', status: 'annule', time: '11:10', date: '14/05/2026' },
 ];
 
-const statusMap: Record<OrderStatus, { label: string; cls: string }> = {
-  en_attente: { label: 'En attente', cls: 'status-pending' },
-  en_preparation: { label: 'En préparation', cls: 'status-preparing' },
-  livre: { label: 'Livré', cls: 'status-delivered' },
-  annule: { label: 'Annulé', cls: 'status-cancelled' },
-};
+function useStatusMap() {
+  const { settings } = useSiteSettings();
+  return {
+    en_attente: { label: settings.orderStatusLabels.en_attente, cls: 'status-pending' },
+    en_preparation: { label: settings.orderStatusLabels.en_preparation, cls: 'status-preparing' },
+    livre: { label: settings.orderStatusLabels.livre, cls: 'status-delivered' },
+    annule: { label: settings.orderStatusLabels.annule, cls: 'status-cancelled' },
+  };
+}
 
 const statusTransitions: Record<OrderStatus, OrderStatus | null> = {
   en_attente: 'en_preparation',
@@ -43,12 +47,15 @@ const statusTransitions: Record<OrderStatus, OrderStatus | null> = {
   annule: null,
 };
 
-const nextActionLabel: Record<OrderStatus, string> = {
-  en_attente: '→ En préparation',
-  en_preparation: '→ Marquer Livré',
-  livre: 'Livré ✓',
-  annule: 'Annulé',
-};
+function useNextActionLabel() {
+  const { settings } = useSiteSettings();
+  return {
+    en_attente: `→ ${settings.orderStatusLabels.en_preparation}`,
+    en_preparation: `→ ${settings.orderStatusLabels.livre}`,
+    livre: `${settings.orderStatusLabels.livre} ✓`,
+    annule: settings.orderStatusLabels.annule,
+  };
+}
 
 const STORAGE_KEY = 'restodounia_orders';
 
@@ -68,11 +75,15 @@ function saveOrders(orders: Order[]) {
 }
 
 export default function AdminOrders() {
+  const { settings } = useSiteSettings();
+  const statusMap = useStatusMap();
+  const nextActionLabel = useNextActionLabel();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<'all' | OrderStatus>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [customReason, setCustomReason] = useState(false);
 
   React.useEffect(() => {
     setOrders(loadOrders());
@@ -98,11 +109,13 @@ export default function AdminOrders() {
     ));
     setCancelTarget(null);
     setCancelReason('');
+    setCustomReason(false);
   };
 
   const openCancelModal = (id: string) => {
     setCancelTarget(id);
     setCancelReason('');
+    setCustomReason(false);
   };
 
   const counts = {
@@ -113,17 +126,19 @@ export default function AdminOrders() {
     annule: orders.filter(o => o.status === 'annule').length,
   };
 
+  const filterTabs = [
+    { key: 'all', label: `Toutes` },
+    { key: 'en_attente', label: settings.orderStatusLabels.en_attente },
+    { key: 'en_preparation', label: settings.orderStatusLabels.en_preparation },
+    { key: 'livre', label: settings.orderStatusLabels.livre },
+    { key: 'annule', label: settings.orderStatusLabels.annule },
+  ] as const;
+
   return (
     <div className="space-y-6">
       {/* Filter tabs */}
       <div className="flex flex-wrap gap-2">
-        {([
-          { key: 'all', label: 'Toutes' },
-          { key: 'en_attente', label: 'En attente' },
-          { key: 'en_preparation', label: 'En préparation' },
-          { key: 'livre', label: 'Livrées' },
-          { key: 'annule', label: 'Annulées' },
-        ] as const).map(f => (
+        {filterTabs.map(f => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
@@ -236,7 +251,7 @@ export default function AdminOrders() {
                         {nextActionLabel[order.status]}
                       </button>
                     )}
-                    {order.status === 'en_attente' && (
+                    {order.status === 'en_attente' && settings.orderCancelEnabled && (
                       <button
                         onClick={() => openCancelModal(order.id)}
                         className="px-5 py-2.5 bg-red-500/15 text-red-400 border border-red-500/30 font-black text-xs uppercase tracking-wider rounded-xl hover:bg-red-500/25 transition-colors"
@@ -245,7 +260,11 @@ export default function AdminOrders() {
                       </button>
                     )}
                     <a
-                      href={`https://wa.me/${order.phone.replace(/\s+/g, '').replace('+', '')}?text=Bonjour%20${encodeURIComponent(order.customer)}%2C%20votre%20commande%20${order.id}%20est%20en%20cours%20de%20traitement.`}
+                      href={`https://wa.me/${order.phone.replace(/\s+/g, '').replace('+', '')}?text=${encodeURIComponent(
+                        settings.orderWhatsAppTemplate
+                          .replace('{customer}', order.customer)
+                          .replace('{order}', order.id)
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-5 py-2.5 bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 font-black text-xs uppercase tracking-wider rounded-xl hover:bg-[#25D366]/25 transition-colors flex items-center gap-2"
@@ -269,13 +288,36 @@ export default function AdminOrders() {
             <p className="text-sm text-muted-foreground">
               Veuillez indiquer le motif de l'annulation pour la commande <strong className="text-foreground">{cancelTarget}</strong>.
             </p>
-            <textarea
-              autoFocus
-              value={cancelReason}
-              onChange={e => setCancelReason(e.target.value)}
-              placeholder="Ex: Client indisponible, produit en rupture..."
-              className="w-full h-24 px-4 py-3 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
+            <div className="space-y-2">
+              {!customReason && settings.orderDefaultCancelReasons.map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => setCancelReason(reason)}
+                  className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    cancelReason === reason
+                      ? 'bg-red-500/15 border-red-500/30 text-red-400'
+                      : 'bg-muted border-border text-foreground hover:border-red-500/30'
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+              <button
+                onClick={() => { setCustomReason(true); setCancelReason(''); }}
+                className="text-xs text-muted-foreground hover:text-foreground font-medium underline underline-offset-2"
+              >
+                {customReason ? 'Choisir un motif prédéfini' : 'Ou écrire un motif personnalisé...'}
+              </button>
+            </div>
+            {customReason && (
+              <textarea
+                autoFocus
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                placeholder="Ex: Client indisponible, produit en rupture..."
+                className="w-full h-24 px-4 py-3 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            )}
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => { setCancelTarget(null); setCancelReason(''); }}

@@ -25,6 +25,13 @@ export interface DashboardChartDay {
   value: number;
 }
 
+export interface OrderStatusLabels {
+  en_attente: string;
+  en_preparation: string;
+  livre: string;
+  annule: string;
+}
+
 export interface SiteSettings {
   restaurantName: string;
   tagline: string;
@@ -85,6 +92,11 @@ export interface SiteSettings {
   dashboardShowRecentOrders: boolean;
   dashboardChartData: DashboardChartDay[];
   dashboardWelcome: string;
+
+  orderStatusLabels: OrderStatusLabels;
+  orderCancelEnabled: boolean;
+  orderDefaultCancelReasons: string[];
+  orderWhatsAppTemplate: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -182,6 +194,22 @@ const defaultSettings: SiteSettings = {
     { day: 'Dim', amount: '128k', value: 128 },
   ],
   dashboardWelcome: '',
+
+  orderStatusLabels: {
+    en_attente: 'En attente',
+    en_preparation: 'En préparation',
+    livre: 'Livré',
+    annule: 'Annulé',
+  },
+  orderCancelEnabled: true,
+  orderDefaultCancelReasons: [
+    'Client indisponible',
+    'Produit en rupture',
+    'Client a annulé',
+    'Zone non desservie',
+    'Doublon de commande',
+  ],
+  orderWhatsAppTemplate: 'Bonjour {customer}, votre commande {order} est en cours de traitement.',
 };
 
 const STORAGE_KEY = 'restodounia_settings';

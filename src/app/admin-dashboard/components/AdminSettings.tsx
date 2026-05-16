@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { useSiteSettings, HeroSlide } from '@/contexts/SiteSettingsContext';
 
-type Section = 'restaurant' | 'hero' | 'social' | 'sections' | 'livraison' | 'paiements' | 'promo' | 'seo' | 'securite' | 'maintenance' | 'dashboard';
+type Section = 'dashboard' | 'restaurant' | 'hero' | 'social' | 'livraison' | 'commandes' | 'sections' | 'paiements' | 'promo' | 'seo' | 'securite' | 'maintenance';
 
 const sections: { key: Section; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Tableau de bord', icon: '📊' },
+  { key: 'commandes', label: 'Commandes', icon: '📋' },
   { key: 'restaurant', label: 'Restaurant', icon: '🏪' },
   { key: 'hero', label: 'Hero & Contenu', icon: '🖼️' },
   { key: 'social', label: 'Réseaux sociaux', icon: '📱' },
@@ -75,6 +76,45 @@ export default function AdminSettings() {
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'commandes':
+        return (
+          <div className="space-y-5">
+            <h3 className="font-black text-foreground text-lg">Gestion des Commandes</h3>
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Libellés des Statuts</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="En attente" value={settings.orderStatusLabels.en_attente} onChange={v => update({ orderStatusLabels: { ...settings.orderStatusLabels, en_attente: v } })} />
+                <Input label="En préparation" value={settings.orderStatusLabels.en_preparation} onChange={v => update({ orderStatusLabels: { ...settings.orderStatusLabels, en_preparation: v } })} />
+                <Input label="Livré" value={settings.orderStatusLabels.livre} onChange={v => update({ orderStatusLabels: { ...settings.orderStatusLabels, livre: v } })} />
+                <Input label="Annulé" value={settings.orderStatusLabels.annule} onChange={v => update({ orderStatusLabels: { ...settings.orderStatusLabels, annule: v } })} />
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Paramètres</h4>
+              <Toggle label="Autoriser l'annulation des commandes" checked={settings.orderCancelEnabled} onChange={v => update({ orderCancelEnabled: v })} />
+            </div>
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Motifs d'annulation prédéfinis</h4>
+              <p className="text-muted-foreground text-xs mb-3">Un motif par ligne.</p>
+              <textarea
+                value={settings.orderDefaultCancelReasons.join('\n')}
+                onChange={e => update({ orderDefaultCancelReasons: e.target.value.split('\n').filter(s => s.trim()) })}
+                rows={5}
+                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none"
+              />
+            </div>
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Message WhatsApp</h4>
+              <p className="text-muted-foreground text-xs mb-3">Utilisez {'{customer}'} et {'{order}'} comme variables.</p>
+              <Input label="Template message" value={settings.orderWhatsAppTemplate} onChange={v => update({ orderWhatsAppTemplate: v })} placeholder="Bonjour {customer}, votre commande {order}..." />
+            </div>
+          </div>
+        );
+
       case 'restaurant':
         return (
           <div className="space-y-5">
