@@ -24,7 +24,7 @@ export default function AdminSettings() {
 
   const update = (partial: Partial<typeof settings>) => updateSettings(partial);
 
-  const updatePayment = (key: 'paymentOrange' | 'paymentMoov' | 'paymentWave' | 'paymentCash' | 'paymentGeniusPay', value: boolean) => {
+  const updatePayment = (key: 'paymentOrange' | 'paymentMoov' | 'paymentWave' | 'paymentCash' | 'paymentYengaPay', value: boolean) => {
     update({ [key]: value });
   };
 
@@ -166,7 +166,7 @@ export default function AdminSettings() {
             <Toggle label="Moov Money" checked={settings.paymentMoov} onChange={v => updatePayment('paymentMoov', v)} />
             <Toggle label="Wave" checked={settings.paymentWave} onChange={v => updatePayment('paymentWave', v)} />
             <Toggle label="Paiement à la livraison" checked={settings.paymentCash} onChange={v => updatePayment('paymentCash', v)} />
-            <Toggle label="Genius Pay (Carte bancaire, Orange, Moov, Wave)" checked={settings.paymentGeniusPay} onChange={v => updatePayment('paymentGeniusPay', v)} />
+            <Toggle label="YengaPay (Orange Money, Moov, Telecel, Coris, PayPal)" checked={settings.paymentYengaPay} onChange={v => updatePayment('paymentYengaPay', v)} />
           </div>
         );
 

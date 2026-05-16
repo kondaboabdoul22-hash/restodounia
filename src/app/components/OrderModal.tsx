@@ -13,14 +13,14 @@ interface OrderModalProps {
 export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
   const { items, clearCart } = useCart();
   const { settings } = useSiteSettings();
-  const [step, setStep] = useState<'form' | 'payment' | 'geniuspay' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'payment' | 'yengapay' | 'success'>('form');
   const [form, setForm] = useState({ name: '', phone: '', address: '', delivery: 'livraison' as 'livraison' | 'emporter' });
-  const [payment, setPayment] = useState('geniuspay');
+  const [payment, setPayment] = useState('yengapay');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const paymentMethods = [
-    ...(settings.paymentGeniusPay ? [{ id: 'geniuspay', label: 'Genius Pay (Carte, Orange, Moov, Wave)', color: '#6C5CE7', icon: '💳' }] : []),
+    ...(settings.paymentYengaPay ? [{ id: 'yengapay', label: 'Carte, Orange, Moov, Telecel, Coris, PayPal', color: '#1a73e8', icon: '💳' }] : []),
     ...(settings.paymentOrange ? [{ id: 'orange', label: 'Orange Money', color: '#FF6600', icon: '🟠' }] : []),
     ...(settings.paymentMoov ? [{ id: 'moov', label: 'Moov Money', color: '#00A651', icon: '🟢' }] : []),
     ...(settings.paymentWave ? [{ id: 'wave', label: 'Wave', color: '#1DC2FF', icon: '🔵' }] : []),
@@ -29,20 +29,20 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
 
   const handleSubmit = () => {
     if (!form.name || !form.phone) return;
-    if (payment === 'geniuspay') {
-      handleGeniusPay();
+    if (payment === 'yengapay') {
+      handleYengaPay();
     } else {
       setStep('payment');
     }
   };
 
-  const handleGeniusPay = async () => {
+  const handleYengaPay = async () => {
     setLoading(true);
     setError('');
     const orderId = `RD-${Date.now().toString().slice(-6)}`;
 
     try {
-      const res = await fetch('/api/geniuspay', {
+      const res = await fetch('/api/yengapay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -59,11 +59,11 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
         clearCart();
         window.location.href = data.paymentUrl;
       } else {
-        setError(data.error || 'Erreur de paiement Genius Pay');
+        setError(data.error || 'Erreur de paiement YengaPay');
         setLoading(false);
       }
     } catch {
-      setError('Impossible de contacter Genius Pay');
+      setError('Impossible de contacter YengaPay');
       setLoading(false);
     }
   };
@@ -88,7 +88,7 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
           <h2 className="font-black text-foreground text-xl">
             {step === 'form' && 'Votre Commande'}
             {step === 'payment' && 'Paiement'}
-            {step === 'geniuspay' && 'Paiement Genius Pay'}
+            {step === 'yengapay' && 'Paiement YengaPay'}
             {step === 'success' && 'Commande Confirmée !'}
           </h2>
           <button onClick={onClose} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors">
@@ -203,8 +203,8 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                     <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
                     <path d="M12 2a10 10 0 0110 10" strokeLinecap="round" />
                   </svg>
-                ) : payment === 'geniuspay' ? (
-                  <>Payer avec Genius Pay →</>
+                ) : payment === 'yengapay' ? (
+                  <>Payer avec YengaPay →</>
                 ) : (
                   <>Choisir le Paiement →</>
                 )}
@@ -212,13 +212,13 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
             </div>
           )}
 
-          {/* Step 2: Payment (non-Genius Pay) */}
+          {/* Step 2: Payment (non-YengaPay) */}
           {step === 'payment' && (
             <div className="space-y-5">
               <p className="text-muted-foreground text-sm">Choisissez votre mode de paiement pour <span className="text-primary font-black">{grandTotal.toLocaleString('fr-FR')} XOF</span></p>
 
               <div className="space-y-3">
-                {paymentMethods.filter(p => p.id !== 'geniuspay').map(pm => (
+                {paymentMethods.filter(p => p.id !== 'yengapay').map(pm => (
                   <button
                     key={pm.id}
                     onClick={() => setPayment(pm.id)}

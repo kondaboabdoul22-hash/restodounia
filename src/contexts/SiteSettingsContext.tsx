@@ -48,7 +48,7 @@ export interface SiteSettings {
   paymentMoov: boolean;
   paymentWave: boolean;
   paymentCash: boolean;
-  paymentGeniusPay: boolean;
+  paymentYengaPay: boolean;
 
   promoEnabled: boolean;
   promoCode: string;
@@ -126,7 +126,7 @@ const defaultSettings: SiteSettings = {
   paymentMoov: true,
   paymentWave: true,
   paymentCash: true,
-  paymentGeniusPay: true,
+  paymentYengaPay: true,
 
   promoEnabled: false,
   promoCode: 'DOUNIA10',
