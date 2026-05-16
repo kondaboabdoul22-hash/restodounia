@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 
 interface StatCardProps {
   label: string;
@@ -58,93 +59,97 @@ const statusMap: Record<string, { label: string; cls: string }> = {
 };
 
 export default function AdminStats() {
+  const { settings } = useSiteSettings();
+
+  const maxChartValue = Math.max(...settings.dashboardChartData.map(d => d.value), 1);
+
   return (
     <div className="space-y-8">
+      {settings.dashboardWelcome && (
+        <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl px-6 py-4">
+          <p className="text-lg font-black text-foreground">{settings.dashboardWelcome}</p>
+        </div>
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Commandes Aujourd'hui" value="47" sub="+12 vs hier" icon="📦" trend="34%" trendUp={true} />
-        <StatCard label="Revenus du Jour" value="128,500 XOF" sub="Toutes commandes" icon="💰" trend="18%" trendUp={true} />
-        <StatCard label="En Attente" value="3" sub="À traiter maintenant" icon="⏳" trend="2" trendUp={false} />
-        <StatCard label="Note Moyenne" value="4.9 ★" sub="Sur 2,400 avis" icon="⭐" trend="0.1" trendUp={true} />
+        {settings.dashboardCards.map((card, i) => (
+          <StatCard key={i} {...card} />
+        ))}
       </div>
 
-      {/* Revenue chart placeholder */}
-      <div className="bg-card border border-border rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="font-black text-foreground text-lg">Revenus de la Semaine</h3>
-            <p className="text-muted-foreground text-sm">Mai 2026</p>
-          </div>
-          <span className="text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-success/15 text-success">↑ +23% vs semaine passée</span>
-        </div>
-        {/* Simple bar chart */}
-        <div className="flex items-end gap-3 h-40">
-          {[
-            { day: 'Lun', value: 85, amount: '85k' },
-            { day: 'Mar', value: 120, amount: '120k' },
-            { day: 'Mer', value: 95, amount: '95k' },
-            { day: 'Jeu', value: 140, amount: '140k' },
-            { day: 'Ven', value: 180, amount: '180k' },
-            { day: 'Sam', value: 210, amount: '210k' },
-            { day: 'Dim', value: 128, amount: '128k' },
-          ].map((d, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2">
-              <p className="text-[10px] font-bold text-muted-foreground">{d.amount}</p>
-              <div
-                className="w-full rounded-t-xl bg-gradient-to-t from-primary to-accent transition-all duration-700"
-                style={{ height: `${(d.value / 210) * 100}%` }}
-              />
-              <p className="text-[10px] font-black uppercase text-muted-foreground">{d.day}</p>
+      {/* Revenue chart */}
+      {settings.dashboardShowChart && (
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-black text-foreground text-lg">Revenus de la Semaine</h3>
+              <p className="text-muted-foreground text-sm">Mai 2026</p>
             </div>
-          ))}
+            <span className="text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-success/15 text-success">↑ +23% vs semaine passée</span>
+          </div>
+          <div className="flex items-end gap-3 h-40">
+            {settings.dashboardChartData.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <p className="text-[10px] font-bold text-muted-foreground">{d.amount}</p>
+                <div
+                  className="w-full rounded-t-xl bg-gradient-to-t from-primary to-accent transition-all duration-700"
+                  style={{ height: `${(d.value / maxChartValue) * 100}%` }}
+                />
+                <p className="text-[10px] font-black uppercase text-muted-foreground">{d.day}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recent orders */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="p-6 border-b border-border flex items-center justify-between">
-          <h3 className="font-black text-foreground text-lg">Commandes Récentes</h3>
-          <span className="text-xs font-black uppercase tracking-widest text-primary">Voir tout →</span>
+      {settings.dashboardShowRecentOrders && (
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-border flex items-center justify-between">
+            <h3 className="font-black text-foreground text-lg">Commandes Récentes</h3>
+            <span className="text-xs font-black uppercase tracking-widest text-primary">Voir tout →</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Commande</th>
+                  <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hidden sm:table-cell">Client</th>
+                  <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hidden lg:table-cell">Articles</th>
+                  <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total</th>
+                  <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((order) => {
+                  const st = statusMap[order.status];
+                  return (
+                    <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-black text-foreground text-sm">{order.id}</p>
+                        <p className="text-muted-foreground text-xs">{order.time}</p>
+                      </td>
+                      <td className="px-6 py-4 hidden sm:table-cell">
+                        <p className="font-bold text-foreground text-sm">{order.customer}</p>
+                      </td>
+                      <td className="px-6 py-4 hidden lg:table-cell">
+                        <p className="text-muted-foreground text-sm truncate max-w-xs">{order.items}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <p className="font-black text-primary text-sm">{order.total.toLocaleString('fr-FR')} XOF</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${st.cls}`}>{st.label}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Commande</th>
-                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hidden sm:table-cell">Client</th>
-                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hidden lg:table-cell">Articles</th>
-                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total</th>
-                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map((order) => {
-                const st = statusMap[order.status];
-                return (
-                  <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="font-black text-foreground text-sm">{order.id}</p>
-                      <p className="text-muted-foreground text-xs">{order.time}</p>
-                    </td>
-                    <td className="px-6 py-4 hidden sm:table-cell">
-                      <p className="font-bold text-foreground text-sm">{order.customer}</p>
-                    </td>
-                    <td className="px-6 py-4 hidden lg:table-cell">
-                      <p className="text-muted-foreground text-sm truncate max-w-xs">{order.items}</p>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <p className="font-black text-primary text-sm">{order.total.toLocaleString('fr-FR')} XOF</p>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${st.cls}`}>{st.label}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

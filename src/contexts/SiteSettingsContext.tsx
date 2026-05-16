@@ -10,6 +10,21 @@ export interface HeroSlide {
   alt: string;
 }
 
+export interface DashboardCard {
+  label: string;
+  value: string;
+  sub: string;
+  icon: string;
+  trend: string;
+  trendUp: boolean;
+}
+
+export interface DashboardChartDay {
+  day: string;
+  amount: string;
+  value: number;
+}
+
 export interface SiteSettings {
   restaurantName: string;
   tagline: string;
@@ -64,6 +79,12 @@ export interface SiteSettings {
 
   adminEmail: string;
   adminPassword: string;
+
+  dashboardCards: DashboardCard[];
+  dashboardShowChart: boolean;
+  dashboardShowRecentOrders: boolean;
+  dashboardChartData: DashboardChartDay[];
+  dashboardWelcome: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -142,6 +163,25 @@ const defaultSettings: SiteSettings = {
 
   adminEmail: 'admin@restodounia.bf',
   adminPassword: 'admin123',
+
+  dashboardCards: [
+    { label: "Commandes Aujourd'hui", value: '47', sub: '+12 vs hier', icon: '📦', trend: '34%', trendUp: true },
+    { label: 'Revenus du Jour', value: '128,500 XOF', sub: 'Toutes commandes', icon: '💰', trend: '18%', trendUp: true },
+    { label: 'En Attente', value: '3', sub: 'À traiter maintenant', icon: '⏳', trend: '2', trendUp: false },
+    { label: 'Note Moyenne', value: '4.9 ★', sub: 'Sur 2,400 avis', icon: '⭐', trend: '0.1', trendUp: true },
+  ],
+  dashboardShowChart: true,
+  dashboardShowRecentOrders: true,
+  dashboardChartData: [
+    { day: 'Lun', amount: '85k', value: 85 },
+    { day: 'Mar', amount: '120k', value: 120 },
+    { day: 'Mer', amount: '95k', value: 95 },
+    { day: 'Jeu', amount: '140k', value: 140 },
+    { day: 'Ven', amount: '180k', value: 180 },
+    { day: 'Sam', amount: '210k', value: 210 },
+    { day: 'Dim', amount: '128k', value: 128 },
+  ],
+  dashboardWelcome: '',
 };
 
 const STORAGE_KEY = 'restodounia_settings';

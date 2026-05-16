@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useSiteSettings, HeroSlide } from '@/contexts/SiteSettingsContext';
 
-type Section = 'restaurant' | 'hero' | 'social' | 'sections' | 'livraison' | 'paiements' | 'promo' | 'seo' | 'securite' | 'maintenance';
+type Section = 'restaurant' | 'hero' | 'social' | 'sections' | 'livraison' | 'paiements' | 'promo' | 'seo' | 'securite' | 'maintenance' | 'dashboard';
 
 const sections: { key: Section; label: string; icon: string }[] = [
+  { key: 'dashboard', label: 'Tableau de bord', icon: '📊' },
   { key: 'restaurant', label: 'Restaurant', icon: '🏪' },
   { key: 'hero', label: 'Hero & Contenu', icon: '🖼️' },
   { key: 'social', label: 'Réseaux sociaux', icon: '📱' },
@@ -218,15 +219,85 @@ export default function AdminSettings() {
           </div>
         );
 
-      case 'maintenance':
+      case 'dashboard':
         return (
           <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-foreground text-lg">Mode Maintenance</h3>
-              <Toggle label="Activer la maintenance" checked={settings.maintenanceMode} onChange={v => update({ maintenanceMode: v })} />
+            <h3 className="font-black text-foreground text-lg">Personnaliser le Tableau de Bord</h3>
+            <Input label="Message d'accueil" value={settings.dashboardWelcome} onChange={v => update({ dashboardWelcome: v })} placeholder="Bonjour, heureux de vous revoir !" />
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Cartes Statistiques</h4>
+              {settings.dashboardCards.map((card, i) => (
+                <div key={i} className="bg-muted rounded-xl p-4 mb-4 space-y-3 border border-border">
+                  <p className="font-bold text-sm text-foreground">Carte {i + 1}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="Icône" value={card.icon} onChange={v => {
+                      const c = [...settings.dashboardCards];
+                      c[i] = { ...c[i], icon: v };
+                      update({ dashboardCards: c });
+                    }} />
+                    <Input label="Valeur" value={card.value} onChange={v => {
+                      const c = [...settings.dashboardCards];
+                      c[i] = { ...c[i], value: v };
+                      update({ dashboardCards: c });
+                    }} />
+                    <Input label="Label" value={card.label} onChange={v => {
+                      const c = [...settings.dashboardCards];
+                      c[i] = { ...c[i], label: v };
+                      update({ dashboardCards: c });
+                    }} />
+                    <Input label="Sous-texte" value={card.sub} onChange={v => {
+                      const c = [...settings.dashboardCards];
+                      c[i] = { ...c[i], sub: v };
+                      update({ dashboardCards: c });
+                    }} />
+                    <Input label="Tendance (ex: +12%)" value={card.trend} onChange={v => {
+                      const c = [...settings.dashboardCards];
+                      c[i] = { ...c[i], trend: v };
+                      update({ dashboardCards: c });
+                    }} />
+                    <Toggle label="Tendance positive" checked={card.trendUp} onChange={v => {
+                      const c = [...settings.dashboardCards];
+                      c[i] = { ...c[i], trendUp: v };
+                      update({ dashboardCards: c });
+                    }} />
+                  </div>
+                </div>
+              ))}
             </div>
-            {settings.maintenanceMode && (
-              <Input label="Message de maintenance" value={settings.maintenanceMessage} onChange={v => update({ maintenanceMessage: v })} />
+
+            <div className="border-t border-border pt-5">
+              <h4 className="font-black text-foreground mb-4">Sections du Dashboard</h4>
+              <Toggle label="Afficher le graphique des revenus" checked={settings.dashboardShowChart} onChange={v => update({ dashboardShowChart: v })} />
+              <Toggle label="Afficher les commandes récentes" checked={settings.dashboardShowRecentOrders} onChange={v => update({ dashboardShowRecentOrders: v })} />
+            </div>
+
+            {settings.dashboardShowChart && (
+              <div className="border-t border-border pt-5">
+                <h4 className="font-black text-foreground mb-4">Données du Graphique</h4>
+                {settings.dashboardChartData.map((d, i) => (
+                  <div key={i} className="bg-muted rounded-xl p-4 mb-3 space-y-3 border border-border">
+                    <p className="font-bold text-sm text-foreground">Jour {i + 1}</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input label="Jour" value={d.day} onChange={v => {
+                        const c = [...settings.dashboardChartData];
+                        c[i] = { ...c[i], day: v };
+                        update({ dashboardChartData: c });
+                      }} />
+                      <Input label="Montant" value={d.amount} onChange={v => {
+                        const c = [...settings.dashboardChartData];
+                        c[i] = { ...c[i], amount: v };
+                        update({ dashboardChartData: c });
+                      }} />
+                      <Input label="Hauteur" type="number" value={d.value} onChange={v => {
+                        const c = [...settings.dashboardChartData];
+                        c[i] = { ...c[i], value: parseInt(v) || 0 };
+                        update({ dashboardChartData: c });
+                      }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         );
