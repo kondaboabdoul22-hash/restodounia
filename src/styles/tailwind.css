@@ -308,3 +308,29 @@ input:checked + .toggle-slider {
 input:checked + .toggle-slider:before {
   transform: translateX(20px);
 }
+
+/* Mobile keyboard fixes */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+.keyboard-safe {
+  /* Fix iOS Safari fixed positioning with virtual keyboard */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+@supports (height: 100dvh) {
+  .keyboard-safe {
+    height: 100dvh;
+  }
+}
+
+@supports not (height: 100dvh) {
+  .keyboard-safe {
+    height: 100%;
+  }
+}

@@ -86,9 +86,9 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
   const waNumber = settings.whatsappNumber.replace(/\s+/g, '').replace('+', '');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 keyboard-safe">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div className="relative bg-card border border-border rounded-t-3xl md:rounded-3xl w-full max-w-lg max-h-[90dvh] md:max-h-[85vh] overflow-y-auto animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
           <h2 className="font-black text-foreground text-xl">
@@ -166,7 +166,8 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="Ex: Aminata Ouédraogo"
-                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    autoComplete="name"
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm touch-manipulation"
                   />
                 </div>
                 <div>
@@ -176,7 +177,9 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                     value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     placeholder="+226 70 00 00 00"
-                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm touch-manipulation"
                   />
                 </div>
                 {form.delivery === 'livraison' && (
@@ -187,7 +190,8 @@ export default function OrderModal({ onClose, grandTotal }: OrderModalProps) {
                       onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                       placeholder="Secteur 15, Rue 15.30, Ouagadougou"
                       rows={3}
-                      className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none"
+                      autoComplete="street-address"
+                      className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none touch-manipulation"
                     />
                   </div>
                 )}

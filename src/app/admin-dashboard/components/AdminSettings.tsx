@@ -59,7 +59,7 @@ export default function AdminSettings() {
         min={min}
         max={max}
         placeholder={placeholder}
-        className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+        className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm touch-manipulation"
       />
     </div>
   );
@@ -103,7 +103,7 @@ export default function AdminSettings() {
                 value={settings.orderDefaultCancelReasons.join('\n')}
                 onChange={e => update({ orderDefaultCancelReasons: e.target.value.split('\n').filter(s => s.trim()) })}
                 rows={5}
-                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none"
+                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none touch-manipulation"
               />
             </div>
 
